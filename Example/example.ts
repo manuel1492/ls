@@ -2,119 +2,126 @@ import { Boom } from '@hapi/boom'
 import NodeCache from 'node-cache'
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, getAggregateVotesInPollMessage, makeCacheableSignalKeyStore, makeInMemoryStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
 import MAIN_LOGGER from '../src/Utils/logger'
-
 const logger = MAIN_LOGGER.child({ })
 logger.level = 'trace'
-
 const useStore = !process.argv.includes('--no-store')
 const doReplies = !process.argv.includes('--no-reply')
-
-// external map to store retry counts of messages when decryption/encryption fails
-// keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
+const ignoredNumbers = ['521xxxxxxxxxx', '11xxxxxxxxxx']
 const msgRetryCounterCache = new NodeCache()
-
-// the store maintains the data of the WA connection in memory
-// can be written out to a file & read from it
 const store = useStore ? makeInMemoryStore({ logger }) : undefined
 store?.readFromFile('./baileys_store_multi.json')
-// save every 10s
 setInterval(() => {
-	store?.writeToFile('./baileys_store_multi.json')
+  store?.writeToFile('./baileys_store_multi.json')
 }, 10_000)
-
-// start a connection
 const startSock = async() => {
-	const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_info')
-	// fetch latest version of WA Web
-	const { version, isLatest } = await fetchLatestBaileysVersion()
-	console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`)
+  const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_info')
+  // fetch latest version of WA Web
+  const { version, isLatest } = await fetchLatestBaileysVersion()
+  console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`)
 
-	const sock = makeWASocket({
-		version,
-		logger,
-		printQRInTerminal: true,
-		auth: {
-			creds: state.creds,
-			/** caching makes the store faster to send/recv messages */
-			keys: makeCacheableSignalKeyStore(state.keys, logger),
-		},
-		msgRetryCounterCache,
-		generateHighQualityLinkPreview: true,
-		// ignore all broadcast messages -- to receive the same
-		// comment the line below out
-		// shouldIgnoreJid: jid => isJidBroadcast(jid),
-		// implement to handle retries & poll updates
-		getMessage,
-	})
+  const sock = makeWASocket({
+    version,
+    logger,
+    printQRInTerminal: true,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger),
+    },
+    msgRetryCounterCache,
+    generateHighQualityLinkPreview: true,
+    getMessage,
+  })
 
-	store?.bind(sock.ev)
+  store?.bind(sock.ev)
 
-	const sendMessageWTyping = async(msg: AnyMessageContent, jid: string) => {
-		await sock.presenceSubscribe(jid)
-		await delay(500)
+  const sendMessageWTyping = async(msg: AnyMessageContent, jid: string) => {
+    await sock.presenceSubscribe(jid)
+    await delay(500)
 
-		await sock.sendPresenceUpdate('composing', jid)
-		await delay(2000)
+    await sock.sendPresenceUpdate('composing', jid)
+    await delay(2000)
 
-		await sock.sendPresenceUpdate('paused', jid)
+    await sock.sendPresenceUpdate('paused', jid)
 
-		await sock.sendMessage(jid, msg)
-	}
+    await sock.sendMessage(jid, msg)
+  }
+  sock.ev.process(
+    async(events) => {
+      if(events['connection.update']) {
+        const update = events['connection.update']
+        const { connection, lastDisconnect } = update
+        if(connection === 'close') {
+          if((lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut) {
+            startSock()
+          } else {
+            console.log('Connection closed. You are logged out.')
+          }
+        }
 
-	// the process function lets you process all events that just occurred
-	// efficiently in a batch
-	sock.ev.process(
-		// events is a map for event name => event data
-		async(events) => {
-			// something about the connection changed
-			// maybe it closed, or we received all offline message or connection opened
-			if(events['connection.update']) {
-				const update = events['connection.update']
-				const { connection, lastDisconnect } = update
-				if(connection === 'close') {
-					// reconnect if not logged out
-					if((lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut) {
-						startSock()
-					} else {
-						console.log('Connection closed. You are logged out.')
-					}
-				}
+        console.log('connection update', update)
+      }
+      if(events['creds.update']) {
+        await saveCreds()
+      }
 
-				console.log('connection update', update)
-			}
+      if(events.call) {
+        console.log('recv call event', events.call)
+      }
 
-			// credentials updated -- save them
-			if(events['creds.update']) {
-				await saveCreds()
-			}
+      // history received
+      if(events['messaging-history.set']) {
+        const { chats, contacts, messages, isLatest } = events['messaging-history.set']
+        console.log(`recv ${chats.length} chats, ${contacts.length} contacts, ${messages.length} msgs (is latest: ${isLatest})`)
+      }
 
-			if(events.call) {
-				console.log('recv call event', events.call)
-			}
+// received a new message
+if (events['messages.upsert']) {
+  const upsert = events['messages.upsert']
+  console.log('recv messages ', JSON.stringify(upsert, undefined, 2))
 
-			// history received
-			if(events['messaging-history.set']) {
-				const { chats, contacts, messages, isLatest } = events['messaging-history.set']
-				console.log(`recv ${chats.length} chats, ${contacts.length} contacts, ${messages.length} msgs (is latest: ${isLatest})`)
-			}
+  if (upsert.type === 'notify') {
+    for (const msg of upsert.messages) {
+if (
+      !msg.key.fromMe &&
+      msg.message &&
+      msg.message.conversation &&
+      msg.message.conversation.startsWith('!') && // solo responder si el mensaje comienza con "!"
+      doReplies
+    ) {
+      console.log('replying to', msg.key.remoteJid)
+      await sock!.readMessages([msg.key])
+const escapedConversation = msg.message.conversation.slice(1).replace(/"/g, '\\"');
 
-			// received a new message
-			if(events['messages.upsert']) {
-				const upsert = events['messages.upsert']
-				console.log('recv messages ', JSON.stringify(upsert, undefined, 2))
+const exec = require('child_process').exec;
+exec(
+  `/opt/llama.cpp/main -m /opt/llama.cpp/ggml-vicuna-7b-1.1-q4_0.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
+  (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
 
-				if(upsert.type === 'notify') {
-					for(const msg of upsert.messages) {
-						if(!msg.key.fromMe && doReplies) {
-							console.log('replying to', msg.key.remoteJid)
-							await sock!.readMessages([msg.key])
-							await sendMessageWTyping({ text: 'Hello there!' }, msg.key.remoteJid!)
-						}
-					}
-				}
-			}
+    // extract the message after "Assistant:"
+    const regex = /Assistant:(.*)/s;
+    const match = regex.exec(stdout);
+    let response;
+    if (match && match[1]) {
+      response = match[1].trim();
+    } else {
+      response = 'No se pudo entender la respuesta del asistente';
+    }
+    sendMessageWTyping({ text: response }, msg.key.remoteJid!);
+  }
+);
 
-			// messages updated like status delivered, message deleted etc.
+
+
+            }
+          }
+        }
+      }
 			if(events['messages.update']) {
 				console.log(
 					JSON.stringify(events['messages.update'], undefined, 2)
