@@ -1,4 +1,4 @@
-# Se utiliza la imagen base de Alpine
+#e utiliza la imagen base de Alpine
 FROM alpine:latest
 
 # Se actualiza la lista de paquetes disponibles
@@ -12,18 +12,17 @@ RUN apk add nodejs \
     make \
     gcc \
     g++ \
-    unzip
+    unzip \
+    wget \
+     bash
 
-# Se establece el directorio de trabajo
+
+RUN git clone https://github.com/HirCoir/Baileys.cpp
+RUN mv Baileys.cpp /app
 WORKDIR /app
-
-# Se copia todo el contenido del directorio actual al directorio de trabajo (en la imagen de Docker)
-COPY . .
-RUN cd /app && yarn
-RUN cd /app/ && unzip llama.cpp.zip
-RUN cd /app/llama.cpp/ && \
-    wget https://huggingface.co/CRD716/ggml-vicuna-1.1-quantized/blob/main/ggml-vicuna-7b-1.1-q4_0.bin && \
-    make -j
-
+RUN yarn
+RUN git clone https://github.com/ggerganov/llama.cpp/
+RUN cd llama.cpp && make -j
+RUN cd llama.cpp && wget https://huggingface.co/CRD716/ggml-vicuna-1.1-quantized/resolve/main/ggml-vicuna-7b-1.1-q4_0.bin
 # Se establece el comando a ejecutar por defecto
 CMD ["yarn", "example"]
