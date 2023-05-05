@@ -15,7 +15,7 @@ store?.readFromFile('./baileys_store_multi.json')
 setInterval(() => {
   store?.writeToFile('./baileys_store_multi.json')
 }, 10_000)
-
+// Define el número máximo de procesos simultáneos, por defecto es 1
 // Defines the maximum number of simultaneous processes, by default it is 1
 const maxProcesses = 1;
 
@@ -122,13 +122,13 @@ if (
             }
             sendMessageWTyping({ text: response }, msg.key.remoteJid!);
 
-            currentProcesses--; // 执行完一个命令后将进程数减一
+            currentProcesses--; // Disminuir el número de procesos en uno después de ejecutar un comando
           }
         );
 
-        currentProcesses++; // 启动一个命令进程后将进程数加一
+        currentProcesses++; // Después de iniciar un proceso de comando, aumente el número de procesos en uno
       } else {
-        const waitingMessage = 'El asistente está ocupado procesando la solicitud de otro usuario, por favor intentalo más tarde.';
+        const waitingMessage = 'El asistente está ocupado procesando la solicitud de otro usuario, por favor intentalo más tarde.\n\nThe wizard is busy processing another user's request, please try again later.';
         sendMessageWTyping({ text: waitingMessage }, msg.key.remoteJid!);
       }
     }
