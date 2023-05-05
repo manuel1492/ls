@@ -128,7 +128,7 @@ if (
 
         currentProcesses++; // Después de iniciar un proceso de comando, aumente el número de procesos en uno
       } else {
-        const waitingMessage = 'El asistente está ocupado procesando la solicitud de otro usuario, por favor intentalo más tarde.\n\nThe wizard is busy processing another user's request, please try again later.';
+        const waitingMessage = "El asistente está ocupado procesando la solicitud de otro usuario, por favor intentalo más tarde.\n\nThe wizard is busy processing another user's request, please try again later.";
         sendMessageWTyping({ text: waitingMessage }, msg.key.remoteJid!);
       }
     }
