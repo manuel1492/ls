@@ -10,6 +10,7 @@ To install Baileys.cpp, simply clone the repository using:
 ``` 
 git clone https://github.com/HirCoir/Baileys.cpp
 ``` 
+To define the maximum number of simultaneous requests that the bot can process (Llama.cpp model), you must edit the example.ts file that is in the Example folder, where you will edit the value of "const maxProcesses = 1;" where the default is 1.
 
 Once inside the directory, build the docker container by running: 
 
@@ -39,6 +40,8 @@ yarn
 ``` 
 
 Then, download the Vicuna model from https://huggingface.co/CRD716/ggml-vicuna-1.1-quantized/blob/main/ggml-vicuna-7b-1.1-q4_0.bin by clicking on Download and move it to the `llama.cpp` folder. Ensure the `llama.cpp` folder is within the `Baileys.cpp` folder.  
+
+To define the maximum number of simultaneous requests that the bot can process (Llama.cpp model), you must edit the example.ts file that is in the Example folder, where you will edit the value of "const maxProcesses = 1;" where the default is 1.
 
 Finally, to start the bot, run: 
 
