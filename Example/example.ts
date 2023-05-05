@@ -2,6 +2,8 @@ import { Boom } from '@hapi/boom'
 import NodeCache from 'node-cache'
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, getAggregateVotesInPollMessage, makeCacheableSignalKeyStore, makeInMemoryStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
 import MAIN_LOGGER from '../src/Utils/logger'
+import * as cp from 'child_process'
+
 const logger = MAIN_LOGGER.child({ })
 logger.level = 'trace'
 const useStore = !process.argv.includes('--no-store')
@@ -13,6 +15,11 @@ store?.readFromFile('./baileys_store_multi.json')
 setInterval(() => {
   store?.writeToFile('./baileys_store_multi.json')
 }, 10_000)
+
+// Defines the maximum number of simultaneous processes, by default it is 1
+const maxProcesses = 1;
+
+let currentProcesses = 0; // Several processes are currently started
 const startSock = async() => {
   const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_info')
   // fetch latest version of WA Web
@@ -88,107 +95,114 @@ if (
       msg.message.conversation.startsWith('!') && // solo responder si el mensaje comienza con "!"
       doReplies
     ) {
-      console.log('replying to', msg.key.remoteJid)
-      await sock!.readMessages([msg.key])
-const escapedConversation = msg.message.conversation.slice(1).replace(/"/g, '\\"');
 
-const exec = require('child_process').exec;
-exec(
-  `/app/llama.cpp/main -m /app/llama.cpp/ggml-vicuna-7b-1.1-q4_0.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
-  (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
+      if (currentProcesses < maxProcesses) {
+        console.log('replying to', msg.key.remoteJid)
+        await sock!.readMessages([msg.key])
+        const escapedConversation = msg.message.conversation.slice(1).replace(/"/g, '\\"');
 
-    // extract the message after "Assistant:"
-    const regex = /Assistant:(.*)/s;
-    const match = regex.exec(stdout);
-    let response;
-    if (match && match[1]) {
-      response = match[1].trim();
-    } else {
-      response = 'No se pudo entender la respuesta del asistente';
+        cp.exec(
+          `/app/llama.cpp/main -m /app/llama.cpp/ggml-vicuna-7b-1.1-q4_0.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
+          (error, stdout, stderr) => {
+            if (error) {
+              console.error(`exec error: ${error}`);
+              return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+
+            // extract the message after "Assistant:"
+            const regex = /Assistant:(.*)/s;
+            const match = regex.exec(stdout);
+            let response;
+            if (match && match[1]) {
+              response = match[1].trim();
+            } else {
+              response = 'No se pudo entender la respuesta del asistente';
+            }
+            sendMessageWTyping({ text: response }, msg.key.remoteJid!);
+
+            currentProcesses--; // 执行完一个命令后将进程数减一
+          }
+        );
+
+        currentProcesses++; // 启动一个命令进程后将进程数加一
+      } else {
+        const waitingMessage = 'El asistente está ocupado procesando la solicitud de otro usuario, por favor intentalo más tarde.';
+        sendMessageWTyping({ text: waitingMessage }, msg.key.remoteJid!);
+      }
     }
-    sendMessageWTyping({ text: response }, msg.key.remoteJid!);
   }
-);
+}
+      }
 
+      if(events['messages.update']) {
+        console.log(
+          JSON.stringify(events['messages.update'], undefined, 2)
+        )
 
-
+        for(const { key, update } of events['messages.update']) {
+          if(update.pollUpdates) {
+            const pollCreation = await getMessage(key)
+            if(pollCreation) {
+              console.log(
+                'got poll update, aggregation: ',
+                getAggregateVotesInPollMessage({
+                  message: pollCreation,
+                  pollUpdates: update.pollUpdates,
+                })
+              )
             }
           }
         }
       }
-			if(events['messages.update']) {
-				console.log(
-					JSON.stringify(events['messages.update'], undefined, 2)
-				)
 
-				for(const { key, update } of events['messages.update']) {
-					if(update.pollUpdates) {
-						const pollCreation = await getMessage(key)
-						if(pollCreation) {
-							console.log(
-								'got poll update, aggregation: ',
-								getAggregateVotesInPollMessage({
-									message: pollCreation,
-									pollUpdates: update.pollUpdates,
-								})
-							)
-						}
-					}
-				}
-			}
+      if(events['message-receipt.update']) {
+        console.log(events['message-receipt.update'])
+      }
 
-			if(events['message-receipt.update']) {
-				console.log(events['message-receipt.update'])
-			}
+      if(events['messages.reaction']) {
+        console.log(events['messages.reaction'])
+      }
 
-			if(events['messages.reaction']) {
-				console.log(events['messages.reaction'])
-			}
+      if(events['presence.update']) {
+        console.log(events['presence.update'])
+      }
 
-			if(events['presence.update']) {
-				console.log(events['presence.update'])
-			}
+      if(events['chats.update']) {
+        console.log(events['chats.update'])
+      }
 
-			if(events['chats.update']) {
-				console.log(events['chats.update'])
-			}
+      if(events['contacts.update']) {
+        for(const contact of events['contacts.update']) {
+          if(typeof contact.imgUrl !== 'undefined') {
+            const newUrl = contact.imgUrl === null
+              ? null
+              : await sock!.profilePictureUrl(contact.id!).catch(() => null)
+            console.log(
+              `contact ${contact.id} has a new profile pic: ${newUrl}`,
+            )
+          }
+        }
+      }
 
-			if(events['contacts.update']) {
-				for(const contact of events['contacts.update']) {
-					if(typeof contact.imgUrl !== 'undefined') {
-						const newUrl = contact.imgUrl === null
-							? null
-							: await sock!.profilePictureUrl(contact.id!).catch(() => null)
-						console.log(
-							`contact ${contact.id} has a new profile pic: ${newUrl}`,
-						)
-					}
-				}
-			}
+      if(events['chats.delete']) {
+        console.log('chats deleted ', events['chats.delete'])
+      }
+    }
+  )
 
-			if(events['chats.delete']) {
-				console.log('chats deleted ', events['chats.delete'])
-			}
-		}
-	)
+  return sock
 
-	return sock
+  async function getMessage(key: WAMessageKey): Promise<WAMessageContent | undefined> {
+    if(store) {
+      const msg = await store.loadMessage(key.remoteJid!, key.id!)
+      return msg?.message || undefined
+    }
 
-	async function getMessage(key: WAMessageKey): Promise<WAMessageContent | undefined> {
-		if(store) {
-			const msg = await store.loadMessage(key.remoteJid!, key.id!)
-			return msg?.message || undefined
-		}
-
-		// only if store is present
-		return proto.Message.fromObject({})
-	}
+    // only if store is present
+    return proto.Message.fromObject({})
+  }
 }
 
 startSock()
