@@ -5,6 +5,23 @@
 ## Spanish
 Baileys.cpp es un pequeño fork de Llama.cpp y Baileys para poder tener un Whatsapp Bot usando un modelo de Inteligencia Artificial Vicuna. Usando el proyecto Llama.cpp como base, que a su vez es una versión compilada de Large Language Model Meta AI, Baileys.cpp le permite crear WhatsApp Bots con facilidad.
 
+
+## Características 
+
+* Baileys.cpp utiliza un modelo entrenado con 13 mil millones de parámetros, con un peso de hasta 4 GB. El modelo admite más de 20 idiomas diferentes. También tiene la opción de agregar números de WhatsApp a la lista de ignorados. Cuando se recibe un mensaje, el bot verificará si la persona está en la lista de ignorados y la ignorará si lo está.
+
+* También puede agregar un contexto o crear una personalidad para el bot: asígnele un nombre y defina lo que puede o no puede hacer. Para hacer esto, simplemente edite el archivo `example/example.ts`.
+
+* Puede definir el número de ejecuciones simultáneas del bot, si recibe más solicitudes de las que tiene permitido este en su lugar devolverá un mensaje al usuario diciendo que está ocupado procesando la información de otro usuario.
+
+Tenga en cuenta que este proyecto es solo una idea y puede no tener un desarrollo futuro.
+
+## Compatibility 
+
+Baileys.cpp has been tested on ARM Ampere A1 with 24GB RAM.
+
+
+
 ## Installation 
 
 Para instalar Baileys.cpp, simplemente clone el repositorio usando:
@@ -52,20 +69,6 @@ yarn example
 ``` 
 
 ¡Escanee el código QR generado y comience a usar el bot!
-
-## Características 
-
-* Baileys.cpp utiliza un modelo entrenado con 13 mil millones de parámetros, con un peso de hasta 4 GB. El modelo admite más de 20 idiomas diferentes. También tiene la opción de agregar números de WhatsApp a la lista de ignorados. Cuando se recibe un mensaje, el bot verificará si la persona está en la lista de ignorados y la ignorará si lo está.
-
-* También puede agregar un contexto o crear una personalidad para el bot: asígnele un nombre y defina lo que puede o no puede hacer. Para hacer esto, simplemente edite el archivo `example/example.ts`.
-
-* Puede definir el número de ejecuciones simultáneas del bot, si recibe más solicitudes de las que tiene permitido este en su lugar devolverá un mensaje al usuario diciendo que está ocupado procesando la información de otro usuario.
-
-Tenga en cuenta que este proyecto es solo una idea y puede no tener un desarrollo futuro.
-
-## Compatibility 
-
-Baileys.cpp has been tested on ARM Ampere A1 with 24GB RAM.
 
 ## English
 
