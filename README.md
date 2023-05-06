@@ -16,13 +16,12 @@ Baileys.cpp es un pequeño fork de Llama.cpp y Baileys para poder tener un Whats
 
 Tenga en cuenta que este proyecto es solo una idea y puede no tener un desarrollo futuro.
 
-## Compatibility 
+## Compatibilidad
 
-Baileys.cpp has been tested on ARM Ampere A1 with 24GB RAM.
+Baileys.cpp ha sido probado en ARM Ampere A1 con 24 GB de RAM.
 
 
-
-## Installation 
+## Instalación
 
 Para instalar Baileys.cpp, simplemente clone el repositorio usando:
 
@@ -39,10 +38,10 @@ docker build -t baileys_cpp .
 
 Alternativamente, puede instalarlo manualmente en su servidor clonando los siguientes repositorios:
 
-- Llama.cpp: https://github.com/ggerganov/llama.cpp 
-- Baileys: https://github.com/adiwajshing/Baileys 
+- Baileys.cpp: https://github.com/HirCoir/Baileys.cpp
+- Llama.cpp: https://github.com/ggerganov/llama.cpp
 
-Luego, instala las dependencias necesarias: `cmake make gcc g++ git`, `nodejs 18` y `yarn` usando:
+Luego, mueva la carpeta llama.cpp dentro de la carpeta Baileys.cpp, instala las dependencias necesarias: `cmake make gcc g++ git`, `nodejs 18` y `yarn` usando:
 
 ```
 sudo apt-get install cmake make gcc g++ git -y
@@ -103,12 +102,12 @@ Once inside the directory, build the docker container by running:
 docker build -t baileys_cpp .
 ``` 
 
-Alternatively, you can install it manually on your server by cloning the following repositories: 
+Alternatively, you can manually install it on your server by cloning the following repositories:
 
-- Llama.cpp: https://github.com/ggerganov/llama.cpp 
-- Baileys: https://github.com/adiwajshing/Baileys 
+- Baileys.cpp: https://github.com/HirCoir/Baileys.cpp
+- Llama.cpp: https://github.com/ggerganov/llama.cpp
 
-Next, install the necessary dependencies: `cmake make gcc g++ git`, `nodejs 18` and `yarn` using: 
+Then, move the llama.cpp folder inside the Baileys.cpp folder, install the necessary dependencies: `cmake make gcc g++ git`, `nodejs 18` and `yarn` using:
 
 ```
 sudo apt-get install cmake make gcc g++ git -y
