@@ -1,6 +1,7 @@
-
 # Baileys.cpp 
 ![Baileys.cpp](https://raw.githubusercontent.com/HirCoir/Baileys.cpp/master/Baileys.cpp.jpg)
+
+[![Video tutorial](https://img.youtube.com/vi/OFtPc5XYMe8/0.jpg)](https://www.youtube.com/watch?v=OFtPc5XYMe8)
 
 ## Spanish
 Baileys.cpp es un pequeño fork de Llama.cpp y Baileys para poder tener un Whatsapp Bot usando un modelo de Inteligencia Artificial Vicuna. Usando el proyecto Llama.cpp como base, que a su vez es una versión compilada de Large Language Model Meta AI, Baileys.cpp le permite crear WhatsApp Bots con facilidad.
