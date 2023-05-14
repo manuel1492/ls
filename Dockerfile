@@ -23,6 +23,6 @@ WORKDIR /app
 RUN yarn
 RUN git clone https://github.com/ggerganov/llama.cpp/
 RUN cd llama.cpp && make -j
-RUN cd llama.cpp && wget https://huggingface.co/CRD716/ggml-vicuna-1.1-quantized/resolve/main/ggml-vicuna-7b-1.1-q4_0.bin
+RUN cd llama.cpp && wget https://archive.org/download/ggml-vicuna-7b-1.1/ggml-vicuna-7b-1.1-q4_0_2.bin
 # Se establece el comando a ejecutar por defecto
 CMD ["yarn", "example"]
