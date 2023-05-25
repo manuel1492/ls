@@ -102,7 +102,7 @@ if (
         const escapedConversation = msg.message.conversation.slice(1).replace(/"/g, '\\"');
 
         cp.exec(
-          `llama.cpp/main -m llama.cpp/ggml-vicuna-7b-1.1-q4_0.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
+          `llama.cpp/main -m llama.cpp/ggml-vicuna-7b-1.1-q4_0_2.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
           (error, stdout, stderr) => {
             if (error) {
               console.error(`exec error: ${error}`);
