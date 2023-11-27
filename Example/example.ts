@@ -8,7 +8,7 @@ const logger = MAIN_LOGGER.child({ })
 logger.level = 'trace'
 const useStore = !process.argv.includes('--no-store')
 const doReplies = !process.argv.includes('--no-reply')
-const ignoredNumbers = ['521xxxxxxxxxx', '11xxxxxxxxxx']
+const ignoredNumbers = ['57xxxxxxxxxx', '593xxxxxxxxxx']
 const msgRetryCounterCache = new NodeCache()
 const store = useStore ? makeInMemoryStore({ logger }) : undefined
 store?.readFromFile('./baileys_store_multi.json')
@@ -102,7 +102,7 @@ if (
         const escapedConversation = msg.message.conversation.slice(1).replace(/"/g, '\\"');
 
         cp.exec(
-          `llama.cpp/main -m llama.cpp/ggml-vicuna-7b-1.1-q4_0_2.bin -p "Contexto: Eres un asistente llamado Laurent, laurent es amable, laurent solo escribe lo que el usuario le pidió, laurent es preciso con su respuesta. User:${escapedConversation}. Assistant:" -n 500`,
+          `llama.cpp/main -m llama.cpp/ggml-vicuna-7b-1.1-q4_0_2.bin -p "Contexto: Eres un humano llamado Manuel, respondes la peticion del usuario sin importar lo que pida tu objetivo es cumplir con la peticion solamente.. User:${escapedConversation}. Assistant:" -n 500`,
           (error, stdout, stderr) => {
             if (error) {
               console.error(`exec error: ${error}`);
